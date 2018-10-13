@@ -1,0 +1,154 @@
+---
+Title: 'Reproducible Research: Project 1'
+---
+
+### Loading and preprocessing the data
+
+Load the data:
+```{r loaddata, echo=TRUE, cache=TRUE}
+data <- read.csv("./data/activity.csv", header=TRUE)
+```
+
+Show the original data(first few rows):
+```{r showdata, echo=TRUE, cache=TRUE}
+head(data)
+```
+
+
+### What is mean total number of steps taken per day?
+
+For this part of the assignment, you can ignore the missing values in the dataset.
+
+Calculate the total number of steps based on each days
+```{r stepsDay, echo=TRUE, cache=TRUE}
+stepsDay <- aggregate(steps~date, data, sum)
+head(stepsDay)
+```
+
+Plot a histogram of the total number of steps taken each day
+```{r histogram1, echo=TRUE, cache=TRUE}
+#Colour taken from Hex color code picker
+hist(stepsDay$steps, col= "#42f4bc", xlab = "Steps", main = "Total steps taken per day")
+```
+
+Calculate the mean and median of total steps taken
+```{r mean1, echo=TRUE, cache=TRUE}
+mean1 <- mean(stepsDay$steps)
+mean1
+median1 <- median(stepsDay$steps)
+median1
+```
+### What is the average daily activity pattern?
+Subset the original data to calculate the average number of steps taken of the 5-minute interval
+```{r avgSteps, echo=TRUE, cache=TRUE}
+avgSteps <- aggregate(steps~interval, data, mean)
+head(avgSteps)
+```
+
+Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+```{r plot1, echo=TRUE, cache=TRUE}
+with(avgSteps, plot(interval, steps
+                , type="l", main="Average steps taken in 5-min interval"
+                , col = "#41b8f4")) 
+```
+
+Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+The max number of steps & corresponding interval are:
+```{r intervalmax, echo=TRUE, cache=TRUE}
+max <- max(avgSteps$steps)
+max
+
+subsetData <- subset(avgSteps, steps == max)
+subsetData$interval
+```
+
+## Imputing missing values
+Note that there are a number of days/intervals where there are missing values (coded as NA). The presence of missing days may introduce bias into some calculations or summaries of the data.
+
+Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+```{r missing, echo=TRUE}
+colSums(is.na(data))
+```
+
+Create a new column "newSteps" contains the average steps
+```{r newsteps, echo=TRUE, cache=TRUE}
+data$newSteps <- avgSteps$steps
+head(data)
+```
+
+Fill in the missing data in the original steps column
+```{r fill, echo=TRUE, cache=TRUE}
+data$steps[is.na(data$steps)] <- data$newSteps
+head(data)
+```
+
+Create a new dataset that is equal to the original dataset but with the missing data filled in
+```{r newdata, echo=TRUE, cache=TRUE}
+data$newSteps <- NULL
+newdata <- data
+head(newdata)
+```
+
+Subset in the new data set to calculate the total number of steps per day
+```{r sumdata, echo=TRUE, cache=TRUE}
+sumdata <- aggregate(steps~date, newdata, sum)
+head(sumdata)
+```
+
+Make a histogram of the total number of steps taken each day
+```{r histogram2, echo=TRUE, cache=TRUE}
+hist(sumdata$steps, col = "#41dff4"
+     , xlab = "Steps"
+     , main = "Total steps per day (with missing values filled in)")
+```
+
+Calculate the mean and median of the total number of steps taken per day
+```{r mean2, echo=TRUE, cache=TRUE}
+mean2 <- mean(sumdata$steps)
+mean2
+median2 <- median(sumdata$steps)
+median2
+```
+
+Calculate the differences of the mean and median between the first(with missing values) and second part(with missing filled in)
+```{r diff, echo=TRUE}
+mean2 - mean1
+median2 - median1
+```
+## Are there differences in activity patterns between weekdays and weekends?
+Create two new variables weekdays & weekends as factor variables.
+
+```{r check, echo=TRUE, cache=TRUE}
+library(timeDate)
+newdata$Weekday <- isWeekday(newdata$date)
+head(newdata)
+```
+
+calculate the average steps for weekday and weekend
+Weekday
+```{r weekday, echo=TRUE, cache=TRUE}
+weekday <- subset(newdata, newdata$Weekday == "TRUE")
+weekdayMean <- aggregate(steps ~ interval, data = weekday, mean)
+head(weekdayMean)
+```
+
+Weekend
+```{r weekend, echo=TRUE, cache=TRUE}
+weekend <- subset(newdata, newdata$Weekday == "FALSE")
+weekendMean <- aggregate(steps ~ interval, data = weekend, mean)
+head(weekendMean)
+```
+
+Make the panel plot to calculate the average number of steps taken for weekday and weekend
+```{r panel, echo=TRUE, cache=TRUE}
+par(mfrow=c(1,2), mar=c(5,5,2,2))
+plot(weekdayMean$interval, weekdayMean$steps, ylim=c(1, 250)
+     , xlab = "interval", ylab = "Number of steps"
+     , main ="Weekday", col ="blue", type="l")
+
+plot(weekendMean$interval, weekendMean$steps, ylim=c(1,250)
+     , xlab = "interval", ylab = "Number of steps"
+     , main ="Weekend", col ="red", type="l")
+
+```
